@@ -3,7 +3,7 @@ import { showSpreadsheet } from "./showSpreadsheet";
 
 export function registerCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
-    vscode.commands.registerCommand("csv-view-and-export.showSpreadSheet", () =>
+    vscode.commands.registerCommand("csv-viewer.showSpreadSheet", () =>
       showSpreadsheet(),
     ),
   );

@@ -1,71 +1,47 @@
-# csv-view-and-export README
+# VSCode csv viewer
 
 This is the README for your extension "csv-view-and-export". After writing up a brief description, we recommend including the following sections.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+* CSVファイルをテーブル形式でプレビューします
+* エディタのスクロール、カーソル移動に追従して、プレビュー画面も更新されます
+* エディタのカーソル位置を、プレビュー画面でハイライト表示します
 
-For example if there is an image subfolder under your extension project workspace:
+![feature X](images/features.gif)
 
-\!\[feature X\]\(images/feature-x.png\)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Instration
 
-## Requirements
+1. VSCode を開く。
+2. 拡張機能 (Ctrl+Shift+X) を開く。
+3. "csv-viewer" を検索。
+4. "インストール" ボタンをクリック。
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Usage
 
-## Extension Settings
+1. VSCode で CSV ファイルを開く。
+2. CTRL + SHIFT + p で "csv-viewer.showSpreadSheet" を入力する
+3. 「Do you want to use the first row as the title?」（先頭行をタイトルとして常に表示するか）と確認されるので、Y か N を選択する
+4. Enter を押すと現在の CSV ファイルの右側に新しいタブが表示され、CSVファイルの内容が表として表示される
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Requirement
 
-For example:
+* Visual Studio Code バージョン 1.96 以上
 
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+* とくになし
+
+## Contribution
+
+[https://github.com/irukasano/vscode-csv-viewer](https://github.com/irukasano/vscode-csv-viewer)
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+このバージョンです。初回リリース。
 
 **Enjoy!**

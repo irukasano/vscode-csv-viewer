@@ -1,7 +1,7 @@
 {
-  "name": "csv-view-and-export",
-  "displayName": "csv-view-and-export",
-  "description": "Show csv file in table and export to dml, php array.",
+  "name": "csv-viewer",
+  "displayName": "csv-viewer",
+  "description": "Show csv file in table",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.96.0"
@@ -13,7 +13,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "csv-view-and-export.showSpreadSheet",
+        "command": "csv-viewer.showSpreadSheet",
         "title": "Show SpreadSheet of csv"
       }
     ]
