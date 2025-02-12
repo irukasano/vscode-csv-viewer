@@ -38,6 +38,7 @@ export async function showSpreadsheet(): Promise<void> {
   console.log("Webview created");
 
   let titleRow = useTitle ? editor.document.lineAt(0).text : "";
+  let previousCursorLine = editor.selection.active.line || 0;
 
   const getRelativeLine = (useTitle: boolean): number => {
     const visibleStartLine = editor.visibleRanges[0].start.line;
@@ -75,10 +76,10 @@ export async function showSpreadsheet(): Promise<void> {
       currentRow: relativeLine,
     });
 
-    console.log("Preview updated:", { startLine, endLine, relativeLine });
+    console.log("update :", { startLine, endLine, relativeLine });
   };
 
-  const highlightCurrentPosition = async () => {
+  const highlightCurrentPosition = async (doUpdate: boolean) => {
     const cursorLine = editor.selection.active.line;
     const relativeLine = getRelativeLine(useTitle);
     const col = getCsvColumnIndex(
@@ -90,11 +91,14 @@ export async function showSpreadsheet(): Promise<void> {
       type: "highlight",
       row: relativeLine,
       col: col,
+      doUpdate: doUpdate,
     });
+
+    console.log("highlight :", { relativeLine, col, doUpdate });
   };
 
   await updatePreview();
-  await highlightCurrentPosition();
+  await highlightCurrentPosition(false);
 
   // WebView が非アクティブになるイベントを監視
   panel.onDidChangeViewState((e) => {
@@ -105,27 +109,32 @@ export async function showSpreadsheet(): Promise<void> {
   });
 
   // 編集イベント
-  vscode.workspace.onDidChangeTextDocument((event) => {
+  vscode.workspace.onDidChangeTextDocument(async (event) => {
     if (event.document === editor.document) {
       titleRow = useTitle ? editor.document.lineAt(0).text : "";
-      updatePreview();
-      highlightCurrentPosition();
+      await updatePreview();
+      await highlightCurrentPosition(false);
     }
   });
 
   // スクロールイベント
-  vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
+  vscode.window.onDidChangeTextEditorVisibleRanges(async (event) => {
     if (event.textEditor === editor) {
-      updatePreview();
-      highlightCurrentPosition();
+      await updatePreview();
+      await highlightCurrentPosition(false);
     }
   });
 
   // 検索選択時
-  vscode.window.onDidChangeTextEditorSelection((event) => {
+  vscode.window.onDidChangeTextEditorSelection(async (event) => {
     if (event.textEditor === editor) {
-      // updatePreview();
-      highlightCurrentPosition();
+      const currentCursorLine = editor.selection.active.line;
+      let doUpdate = true;
+      if (currentCursorLine !== previousCursorLine) {
+        doUpdate = true;
+      }
+      await highlightCurrentPosition(doUpdate);
+      previousCursorLine = currentCursorLine;
     }
   });
 }

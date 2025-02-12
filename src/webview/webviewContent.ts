@@ -1,16 +1,20 @@
 export function getWebviewContent(): string {
   const scriptContent = `
+    let lastRows = [];
+    let lastTitleRow = '';
     let currentStartIndex = 0;
     let currentEndIndex = 0;
     let currentCursorLine = -1;
 
-    function highlightCell(row, col) {
+    function highlightCell(row, col, doUpdate) {
         const table = document.getElementById('csv-table');
         if (!table) return;
 
         // **カーソルが現在の表示範囲外なら updateTable() を呼ぶ**
-        if (row < currentStartIndex || row > currentEndIndex) {
-          updateTable(lastTitleRow, lastRows, row);
+        if ( doUpdate) {
+          if (row < currentStartIndex + 5 || row > currentEndIndex -5 ){
+            updateTable(lastTitleRow, lastRows, row);
+          }
         }
 
         // 既存のハイライトをリセット
@@ -18,8 +22,9 @@ export function getWebviewContent(): string {
             cell.classList.remove('highlight');
         });
 
-        const targetRow = document.querySelector(\`tr[data-row="\${row}"]\`);
-        console.log(targetRow);
+        const highlightRow = row;
+        const targetRow = document.querySelector(\`tr[data-row="\${highlightRow}"]\`);
+        console.log('targetRow = ', {row, highlightRow, currentStartIndex, currentEndIndex, targetRow});
         if (targetRow) {
           const cells = targetRow.getElementsByTagName("td");
 
@@ -37,6 +42,8 @@ export function getWebviewContent(): string {
       const csvTitleRow = document.getElementById('csv-title-row');
       const csvBody = document.getElementById('csv-body');
 
+      lastRows = rows;
+      lastTitleRow = titleRow;
       csvTitleRow.innerHTML = '';
       if (titleRow) {
         titleRow.split(',').forEach(cell => {
@@ -54,11 +61,15 @@ export function getWebviewContent(): string {
         const viewportHeight = window.innerHeight;
         const visibleRowCount = Math.floor(viewportHeight / rowHeight) -2;
 
-        console.log("csvBody = ", { rowHeight, viewportHeight, visibleRowCount});
-
         // **カーソル行を中心に表示範囲を決定**
         let newStartIndex = Math.max(0, cursorLine - Math.floor(visibleRowCount / 2));
         let newEndIndex = Math.min(rows.length, newStartIndex + visibleRowCount);
+
+        if (newEndIndex - newStartIndex < visibleRowCount) { 
+          newStartIndex = newEndIndex - visibleRowCount;
+        }
+
+        console.log("csvBody = ", { rowHeight, viewportHeight, visibleRowCount});
 
         currentStartIndex = newStartIndex;
         currentEndIndex = newEndIndex;
@@ -102,7 +113,7 @@ export function getWebviewContent(): string {
             updateTable(message.title, message.rows, message.currentRow);
         }
         if (message.type === 'highlight') {
-            highlightCell(message.row, message.col);
+            highlightCell(message.row, message.col, message.doUpdate);
         }
     });
 
