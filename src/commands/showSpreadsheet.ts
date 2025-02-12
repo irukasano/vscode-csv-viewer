@@ -39,6 +39,21 @@ export async function showSpreadsheet(): Promise<void> {
 
   let titleRow = useTitle ? editor.document.lineAt(0).text : "";
 
+  const getRelativeLine = (useTitle: boolean): number => {
+    const visibleStartLine = editor.visibleRanges[0].start.line;
+    const cursorLine = editor.selection.active.line;
+    let relativeLine = cursorLine - visibleStartLine; // 表示範囲内の相対行番号
+
+    // **タイトル行が Webビューに常に表示される かつ CSVエディタでは表示されていない場合のみ +1**
+    // if (useTitle && visibleStartLine > 0) {
+    //   relativeLine += 1;
+    // }
+    if (useTitle) {
+      return relativeLine;
+    }
+    return relativeLine;
+  };
+
   const updatePreview = async () => {
     console.log("Updating preview");
     const visibleRange = editor.visibleRanges[0];
@@ -46,6 +61,7 @@ export async function showSpreadsheet(): Promise<void> {
       ? Math.max(visibleRange.start.line, 1)
       : visibleRange.start.line;
     const endLine = visibleRange.end.line;
+    const relativeLine = getRelativeLine(useTitle);
 
     const visibleLines = [];
     for (let i = startLine; i <= endLine; i++) {
@@ -56,24 +72,19 @@ export async function showSpreadsheet(): Promise<void> {
       type: "update",
       title: titleRow,
       rows: visibleLines,
+      currentRow: relativeLine,
     });
 
-    console.log("Preview updated:", { startLine, endLine });
+    console.log("Preview updated:", { startLine, endLine, relativeLine });
   };
 
   const highlightCurrentPosition = async () => {
-    const visibleStartLine = editor.visibleRanges[0].start.line;
     const cursorLine = editor.selection.active.line;
-    let relativeLine = cursorLine - visibleStartLine; // 表示範囲内の相対行番号
+    const relativeLine = getRelativeLine(useTitle);
     const col = getCsvColumnIndex(
       editor.document.lineAt(cursorLine).text,
       editor.selection.active.character,
     );
-
-    // **タイトル行が Webビューに常に表示される かつ CSVエディタでは表示されていない場合のみ +1**
-    if (useTitle && visibleStartLine > 0) {
-      relativeLine += 1;
-    }
 
     panel.webview.postMessage({
       type: "highlight",
@@ -113,6 +124,7 @@ export async function showSpreadsheet(): Promise<void> {
   // 検索選択時
   vscode.window.onDidChangeTextEditorSelection((event) => {
     if (event.textEditor === editor) {
+      // updatePreview();
       highlightCurrentPosition();
     }
   });

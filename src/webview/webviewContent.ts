@@ -1,36 +1,92 @@
 export function getWebviewContent(): string {
   const scriptContent = `
+    let currentStartIndex = 0;
+    let currentEndIndex = 0;
+    let currentCursorLine = -1;
+
     function highlightCell(row, col) {
         const table = document.getElementById('csv-table');
         if (!table) return;
+
+        // **カーソルが現在の表示範囲外なら updateTable() を呼ぶ**
+        if (row < currentStartIndex || row > currentEndIndex) {
+          updateTable(lastTitleRow, lastRows, row);
+        }
 
         // 既存のハイライトをリセット
         Array.from(table.getElementsByTagName('td')).forEach(cell => {
             cell.classList.remove('highlight');
         });
 
-        const rows = table.getElementsByTagName('tr');
+        const targetRow = document.querySelector(\`tr[data-row="\${row}"]\`);
+        console.log(targetRow);
+        if (targetRow) {
+          const cells = targetRow.getElementsByTagName("td");
 
-        for (let r = 0; r < rows.length; r++) {
-            const cells = rows[r].getElementsByTagName('td');
-            for (let c = 0; c < cells.length; c++) {
-                if (r === row && c === col) {
-                    const targetCell = cells[c];
+          if (col >= 0 && col < cells.length) {
+            // 指定セルをハイライト
+            const targetCell = cells[col];
 
-                    // ハイライトを適用
-                    targetCell.classList.add('highlight');
-
-                    // **該当セルを画面中央にスクロール**
-                    targetCell.scrollIntoView({
-                        block: "center", // **垂直方向: 画面中央に配置**
-                        inline: "center", // **水平方向: 画面中央に配置**
-                        behavior: "smooth" // **スムーズにスクロール**
-                    });
-
-                    return; // ハイライトしたら即終了（ネストされたループを抜ける）
-                }
-            }
+            // ハイライトを適用
+            targetCell.classList.add('highlight');
+          }
         }
+    }
+
+    function updateTable(titleRow, rows, cursorLine) {
+      const csvTitleRow = document.getElementById('csv-title-row');
+      const csvBody = document.getElementById('csv-body');
+
+      csvTitleRow.innerHTML = '';
+      if (titleRow) {
+        titleRow.split(',').forEach(cell => {
+            const th = document.createElement('th');
+            th.textContent = cell.trim();
+            csvTitleRow.appendChild(th);
+        });
+      }
+
+      // **行の高さを取得**
+      csvBody.innerHTML = '';
+      requestAnimationFrame(() => {
+        const firstRow = csvTitleRow;
+        const rowHeight = firstRow ? firstRow.offsetHeight : 20;
+        const viewportHeight = window.innerHeight;
+        const visibleRowCount = Math.floor(viewportHeight / rowHeight) -2;
+
+        console.log("csvBody = ", { rowHeight, viewportHeight, visibleRowCount});
+
+        // **カーソル行を中心に表示範囲を決定**
+        let newStartIndex = Math.max(0, cursorLine - Math.floor(visibleRowCount / 2));
+        let newEndIndex = Math.min(rows.length, newStartIndex + visibleRowCount);
+
+        currentStartIndex = newStartIndex;
+        currentEndIndex = newEndIndex;
+        currentCursorLine = cursorLine;
+
+        console.log("Indexes = ", {currentStartIndex, currentEndIndex, currentCursorLine});
+
+        for (let i = currentStartIndex; i < currentEndIndex; i++) {
+          const rowElement = document.createElement("tr");
+          rowElement.setAttribute("data-row", i);
+
+          rows[i].forEach((cell) => {
+            const td = document.createElement("td");
+            const trimmedCell = cell.trim();
+
+            // セルごとにスタイルを適用
+            if (!isNaN(trimmedCell) && trimmedCell !== '') {
+                td.classList.add('number'); // 数値の場合
+            } else if (isValidDate(trimmedCell)) {
+                td.classList.add('date'); // 日付の場合
+            }
+
+            td.textContent = trimmedCell;
+            rowElement.appendChild(td);
+          });
+          csvBody.appendChild(rowElement);
+        }
+      });
     }
 
     // 日付判定関数
@@ -42,39 +98,8 @@ export function getWebviewContent(): string {
     // WebView からのメッセージを受信
     window.addEventListener('message', event => {
         const message = event.data;
-
         if (message.type === 'update') {
-            // テーブルの更新処理
-            const csvTitleRow = document.getElementById('csv-title-row');
-            const csvBody = document.getElementById('csv-body');
-
-            csvTitleRow.innerHTML = '';
-            message.title.split(',').forEach(cell => {
-                const th = document.createElement('th');
-                th.textContent = cell.trim();
-                csvTitleRow.appendChild(th);
-            });
-
-            csvBody.innerHTML = '';
-            message.rows.forEach(row => {
-                const tr = document.createElement('tr');
-                const parsedRow = row;
-                parsedRow.forEach(cell => {
-                    const td = document.createElement('td');
-                    const trimmedCell = cell.trim();
-
-                    // セルごとにスタイルを適用
-                    if (!isNaN(trimmedCell) && trimmedCell !== '') {
-                        td.classList.add('number'); // 数値の場合
-                    } else if (isValidDate(trimmedCell)) {
-                        td.classList.add('date'); // 日付の場合
-                    }
-
-                    td.textContent = trimmedCell;
-                    tr.appendChild(td);
-                });
-                csvBody.appendChild(tr);
-            });
+            updateTable(message.title, message.rows, message.currentRow);
         }
         if (message.type === 'highlight') {
             highlightCell(message.row, message.col);
