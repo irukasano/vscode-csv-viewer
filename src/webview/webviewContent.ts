@@ -65,7 +65,7 @@ export function getWebviewContent(): string {
         let newStartIndex = Math.max(0, cursorLine - Math.floor(visibleRowCount / 2));
         let newEndIndex = Math.min(rows.length, newStartIndex + visibleRowCount);
 
-        if (newEndIndex - newStartIndex < visibleRowCount) { 
+        if (newEndIndex - newStartIndex < visibleRowCount) {
           newStartIndex = newEndIndex - visibleRowCount;
         }
 
@@ -111,6 +111,12 @@ export function getWebviewContent(): string {
         const message = event.data;
         if (message.type === 'update') {
             updateTable(message.title, message.rows, message.currentRow);
+            // 描画直後に highlight を実行（タイミング確保）
+            requestAnimationFrame(() => {
+              if (msg.highlight) {
+                highlightCell(msg.highlight.row, msg.highlight.col, msg.highlight.doUpdate);
+              }
+            });
         }
         if (message.type === 'highlight') {
             highlightCell(message.row, message.col, message.doUpdate);
@@ -161,7 +167,7 @@ export function getWebviewContent(): string {
         .highlight {
           background-color: yellow;
           color: black !important;
-          font-weight: bold;  
+          font-weight: bold;
         }
       </style>
     </head>
