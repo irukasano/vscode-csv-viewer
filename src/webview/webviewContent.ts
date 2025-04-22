@@ -6,14 +6,14 @@ export function getWebviewContent(): string {
     let currentEndIndex = 0;
     let currentCursorLine = -1;
 
-    function highlightCell(row, col, doUpdate) {
+    async function highlightCell(row, col, doUpdate) {
         const table = document.getElementById('csv-table');
         if (!table) return;
 
         // **カーソルが現在の表示範囲外なら updateTable() を呼ぶ**
         if ( doUpdate) {
           if (row < currentStartIndex + 5 || row > currentEndIndex -5 ){
-            updateTable(lastTitleRow, lastRows, row);
+            await updateTable(lastTitleRow, lastRows, row);
           }
         }
 
@@ -39,64 +39,70 @@ export function getWebviewContent(): string {
     }
 
     function updateTable(titleRow, rows, cursorLine) {
-      const csvTitleRow = document.getElementById('csv-title-row');
-      const csvBody = document.getElementById('csv-body');
+      return new Promise((resolve) => {
 
-      lastRows = rows;
-      lastTitleRow = titleRow;
-      csvTitleRow.innerHTML = '';
-      if (titleRow) {
-        titleRow.split(',').forEach(cell => {
-            const th = document.createElement('th');
-            th.textContent = cell.trim();
-            csvTitleRow.appendChild(th);
-        });
-      }
+        const csvTitleRow = document.getElementById('csv-title-row');
+        const csvBody = document.getElementById('csv-body');
 
-      // **行の高さを取得**
-      csvBody.innerHTML = '';
-      requestAnimationFrame(() => {
-        const firstRow = csvTitleRow;
-        const rowHeight = firstRow ? firstRow.offsetHeight : 20;
-        const viewportHeight = window.innerHeight;
-        const visibleRowCount = Math.floor(viewportHeight / rowHeight) -2;
-
-        // **カーソル行を中心に表示範囲を決定**
-        let newStartIndex = Math.max(0, cursorLine - Math.floor(visibleRowCount / 2));
-        let newEndIndex = Math.min(rows.length, newStartIndex + visibleRowCount);
-
-        if (newEndIndex - newStartIndex < visibleRowCount) {
-          newStartIndex = newEndIndex - visibleRowCount;
-        }
-
-        console.log("csvBody = ", { rowHeight, viewportHeight, visibleRowCount});
-
-        currentStartIndex = newStartIndex;
-        currentEndIndex = newEndIndex;
-        currentCursorLine = cursorLine;
-
-        console.log("Indexes = ", {currentStartIndex, currentEndIndex, currentCursorLine});
-
-        for (let i = currentStartIndex; i < currentEndIndex; i++) {
-          const rowElement = document.createElement("tr");
-          rowElement.setAttribute("data-row", i);
-
-          rows[i].forEach((cell) => {
-            const td = document.createElement("td");
-            const trimmedCell = cell.trim();
-
-            // セルごとにスタイルを適用
-            if (!isNaN(trimmedCell) && trimmedCell !== '') {
-                td.classList.add('number'); // 数値の場合
-            } else if (isValidDate(trimmedCell)) {
-                td.classList.add('date'); // 日付の場合
-            }
-
-            td.textContent = trimmedCell;
-            rowElement.appendChild(td);
+        lastRows = rows;
+        lastTitleRow = titleRow;
+        csvTitleRow.innerHTML = '';
+        if (titleRow) {
+          titleRow.split(',').forEach(cell => {
+              const th = document.createElement('th');
+              th.textContent = cell.trim();
+              csvTitleRow.appendChild(th);
           });
-          csvBody.appendChild(rowElement);
         }
+
+        // **行の高さを取得**
+        csvBody.innerHTML = '';
+        requestAnimationFrame(() => {
+          const firstRow = csvTitleRow;
+          const rowHeight = firstRow ? firstRow.offsetHeight : 20;
+          const viewportHeight = window.innerHeight;
+          const visibleRowCount = Math.floor(viewportHeight / rowHeight) -2;
+
+          // **カーソル行を中心に表示範囲を決定**
+          let newStartIndex = Math.max(0, cursorLine - Math.floor(visibleRowCount / 2));
+          let newEndIndex = Math.min(rows.length, newStartIndex + visibleRowCount);
+
+          if (newEndIndex - newStartIndex < visibleRowCount) {
+            newStartIndex = newEndIndex - visibleRowCount;
+          }
+
+          console.log("csvBody = ", { rowHeight, viewportHeight, visibleRowCount});
+
+          currentStartIndex = newStartIndex;
+          currentEndIndex = newEndIndex;
+          currentCursorLine = cursorLine;
+
+          console.log("Indexes = ", {currentStartIndex, currentEndIndex, currentCursorLine});
+
+          for (let i = currentStartIndex; i < currentEndIndex; i++) {
+            const rowElement = document.createElement("tr");
+            rowElement.setAttribute("data-row", i);
+
+            rows[i].forEach((cell) => {
+              const td = document.createElement("td");
+              const trimmedCell = cell.trim();
+
+              // セルごとにスタイルを適用
+              if (!isNaN(trimmedCell) && trimmedCell !== '') {
+                  td.classList.add('number'); // 数値の場合
+              } else if (isValidDate(trimmedCell)) {
+                  td.classList.add('date'); // 日付の場合
+              }
+
+              td.textContent = trimmedCell;
+              rowElement.appendChild(td);
+            });
+            csvBody.appendChild(rowElement);
+          }
+
+          resolve();
+        });
+
       });
     }
 
@@ -107,19 +113,19 @@ export function getWebviewContent(): string {
     }
 
     // WebView からのメッセージを受信
-    window.addEventListener('message', event => {
+    window.addEventListener('message', async event => {
         const message = event.data;
         if (message.type === 'update') {
-            updateTable(message.title, message.rows, message.currentRow);
+            await updateTable(message.title, message.rows, message.currentRow);
             // 描画直後に highlight を実行（タイミング確保）
-            requestAnimationFrame(() => {
-              if (msg.highlight) {
-                highlightCell(msg.highlight.row, msg.highlight.col, msg.highlight.doUpdate);
+            requestAnimationFrame(async () => {
+              if (message.highlight) {
+                await highlightCell(message.highlight.row, message.highlight.col, message.highlight.doUpdate);
               }
             });
         }
         if (message.type === 'highlight') {
-            highlightCell(message.row, message.col, message.doUpdate);
+            await highlightCell(message.row, message.col, message.doUpdate);
         }
     });
 

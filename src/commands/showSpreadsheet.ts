@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { getWebviewContent } from "../webview/webviewContent";
-import { spreadsheetEventHandler } from "../event/spreadsheetEventHandler";
+import { spreadsheetEvents } from "../event/spreadsheetEvents";
 
 export async function showSpreadsheet(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
@@ -20,11 +20,11 @@ export async function showSpreadsheet(): Promise<void> {
     "spreadsheetView",
     "Spreadsheet",
     vscode.ViewColumn.Beside,
-    { enableScripts: true }
+    { enableScripts: true },
   );
 
   panel.webview.html = getWebviewContent();
 
-  const handler = new spreadsheetEventHandler(editor, panel, useTitle);
+  const handler = new spreadsheetEvents(editor, panel, useTitle);
   await handler.initialize();
 }

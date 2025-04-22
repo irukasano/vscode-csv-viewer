@@ -4,6 +4,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+			"label": "build-and-watch",
 			"type": "npm",
 			"script": "watch",
 			"problemMatcher": "$tsc-watch",
